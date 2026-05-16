@@ -143,13 +143,24 @@ body{zoom:${(fs/14).toFixed(3)};}
 .hbtn-dot{font-size:18px;}
 
 /* FULL-HEIGHT CART */
-.cart-area{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.cart-full{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.oi{padding:2px 8px;border-bottom:1px solid ${T.border}40;display:flex;align-items:center;gap:3px;min-height:34px;}
+.cart-area{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;background:#fff;}
+.cart-full{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;}
+.oi{padding:2px 8px 3px;border-bottom:1px solid ${T.border}40;display:flex;flex-direction:column;}
+.oi-ctrl-row{display:flex;align-items:center;gap:3px;min-height:34px;}
 .oi-name{flex:1;font-size:12px;font-weight:800;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.oi-sub{font-size:10px;font-weight:600;color:${T.textMuted};padding:0 2px 1px;line-height:1.3;}
+.oi-sub-var{color:${T.textMid};}
+.oi-sub-add{color:${T.blue};}
+.oi-sub-note{color:${T.orange};font-style:italic;}
 .oi-note-btn{background:none;border:1px dashed ${T.borderMid};border-radius:5px;padding:1px 5px;font-size:10px;color:${T.textMuted};cursor:pointer;flex-shrink:0;line-height:1.4;}
 .oi-note-btn.has{border-color:${T.blue}40;color:${T.blue};background:${T.blueL};}
 .oi-price-r{font-size:12px;font-weight:900;color:${T.primary};min-width:34px;text-align:right;flex-shrink:0;}
+/* SHARE SHEET */
+.share-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:flex;align-items:flex-end;}
+.share-sheet{background:${T.surface};border-radius:20px 20px 0 0;width:100%;padding-bottom:28px;}
+.share-sheet-title{text-align:center;padding:14px 0 10px;font-size:12px;color:${T.textMuted};font-weight:700;border-bottom:1px solid ${T.border};}
+.share-sheet-item{padding:15px 22px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:12px;color:${T.text};}
+.share-sheet-item:active{background:${T.primaryL};}
 .qb{background:${T.border};border:none;color:${T.text};width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
 .qb.del{background:${T.redL};color:${T.red};}
 .qb.mv{background:${T.blueL};color:${T.blue};}
@@ -615,7 +626,7 @@ export default function App(){
   const[itemDone,setItemDone]=useState({});
   const[reportPeriod,setReportPeriod]=useState("today");
   const[kitchenCfg,setKitchenCfg]=useState({waiterName:false,itemNotes:true,sortBy:"default"});
-  const[printCfg,setPrintCfg]=useState(()=>{const def={companyName:true,header:"Opp. Redij Petrol Pump, Near D.B.J College, Chiplun, 415605",footer:"Thank You! Visit Again!!",time:true,qty:true,price:true,desc:true,tax:false,table:true,paperWidth:58,labelW:50,labelH:25,labelVShift:0,staffName:false,itemNotesPrint:false,labelFont:"Arial",labelShowName:true,labelShowVar:true,labelShowAddons:true,labelShowNotes:true,labelShowPrice:false,labelNameSize:11,labelNameBold:true,labelNameItalic:false,labelVarSize:9,labelVarBold:false,labelVarItalic:false,labelAddonSize:9,labelAddonBold:false,labelAddonItalic:false,labelNoteSize:9,labelNoteBold:false,labelNoteItalic:false,labelPriceSize:10,labelPriceBold:true,labelPriceItalic:false,labelDots:384};try{const s=localStorage.getItem("modpos_printcfg");if(s)return {...def,...JSON.parse(s)};}catch{}return def;});
+  const[printCfg,setPrintCfg]=useState(()=>{const def={companyName:true,header:"Opp. Redij Petrol Pump, Near D.B.J College, Chiplun, 415605",footer:"Thank You! Visit Again!!",time:true,qty:true,price:true,desc:true,tax:false,table:true,paperWidth:58,labelW:50,labelH:25,labelVShift:0,staffName:false,itemNotesPrint:false,labelFont:"Arial",labelShowName:true,labelShowVar:true,labelShowAddons:true,labelShowNotes:true,labelShowPrice:false,labelNameSize:11,labelNameBold:true,labelNameItalic:false,labelVarSize:9,labelVarBold:false,labelVarItalic:false,labelAddonSize:9,labelAddonBold:false,labelAddonItalic:false,labelNoteSize:9,labelNoteBold:false,labelNoteItalic:false,labelPriceSize:10,labelPriceBold:true,labelPriceItalic:false,labelDots:384,labelGapMm:3};try{const s=localStorage.getItem("modpos_printcfg");if(s)return {...def,...JSON.parse(s)};}catch{}return def;});
   const savePrintCfg=(cfg)=>{setPrintCfg(cfg);try{localStorage.setItem("modpos_printcfg",JSON.stringify(cfg));}catch{}};
   const[btPrinter,setBtPrinter]=useState(null); // Web Bluetooth device
   const{notes:recentNotes,addNote}=useRecentNotes();
@@ -1033,7 +1044,7 @@ export default function App(){
 
     // Single tall canvas: all labels stacked, dashed tear-line between each.
     // Continuous roll mode prints top-to-bottom — no page breaks needed.
-    const SEP=40; // px gap between labels (~5mm at 203 DPI)
+    const SEP=Math.max(10,Math.round((cfg.labelGapMm??3)*PPM)+6); // configured gap + 6px for the divider line
     const totalH=expanded.length*H+(expanded.length-1)*SEP;
     const cv=document.createElement('canvas');
     cv.width=W;cv.height=totalH;
@@ -1480,6 +1491,7 @@ function OrderScreen({tid,orders,allTables,onBack,onRemove,onUpdate,onAddExtra,o
   const[pinModal,setPinModal]=useState(null);
   const[cancelOrderPin,setCancelOrderPin]=useState(false);
   const[showDrop,setShowDrop]=useState(false);
+  const[showShareSheet,setShowShareSheet]=useState(false);
   const[menuOpen,setMenuOpen]=useState(true);
   const cartRef=useRef(null);
   useTick(10000);
@@ -1511,7 +1523,7 @@ function OrderScreen({tid,orders,allTables,onBack,onRemove,onUpdate,onAddExtra,o
       <div className="ohdr-slim">
         <button className="bbtn" onClick={onBack}>←</button>
         <div className="otitle" style={{flex:1,marginLeft:4,fontSize:15,fontWeight:800}}>{tblName}</div>
-        {total>0&&<button className="hbtn" onClick={()=>onPrintLabels(tid)}>🏷</button>}
+        {total>0&&<button className="hbtn" style={{width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>{onPrintLabels(tid);onSend(tid);}}>🏷 Print & Send</button>}
         <button className={`hbtn hbtn-urg${ord?.priority?" on":""}`} onClick={()=>onTogglePriority(tid)}>🔴</button>
         <div style={{position:"relative"}}>
           <button className="hbtn hbtn-dot" onClick={()=>setShowDrop(p=>!p)}>⋮</button>
@@ -1519,9 +1531,7 @@ function OrderScreen({tid,orders,allTables,onBack,onRemove,onUpdate,onAddExtra,o
             <div style={{position:"fixed",inset:0,zIndex:298}} onClick={()=>setShowDrop(false)}/>
             <div className="drop-menu">
               <div className="drop-item" onClick={()=>{setShowDrop(false);onPrint(tid);}}>🖨 Print Bill</div>
-              <div className="drop-item" onClick={()=>{setShowDrop(false);onPrintLabels(tid);}}>🏷 Print Labels</div>
-              <div className="drop-item" onClick={()=>{setShowDrop(false);onShareWhatsApp(tid);}}>📲 WhatsApp</div>
-              <div className="drop-item" onClick={()=>{setShowDrop(false);onShareText(tid);}}>📄 Share Text</div>
+              <div className="drop-item" onClick={()=>{setShowDrop(false);setShowShareSheet(true);}}>🔗 Share</div>
               <div className="drop-div"/>
               <div className="drop-item" onClick={()=>{setShowDrop(false);onTransfer();}}>⇄ Move Items</div>
               <div className="drop-div"/>
@@ -1536,22 +1546,28 @@ function OrderScreen({tid,orders,allTables,onBack,onRemove,onUpdate,onAddExtra,o
 
       {/* Cart area */}
       <div className="cart-area">
-        <div className="cart-full" ref={cartRef} onClick={!menuOpen?()=>setMenuOpen(true):undefined}>
+        <div className="cart-full" ref={cartRef} onClick={()=>setMenuOpen(p=>!p)}>
           {items.length===0&&<div style={{textAlign:"center",padding:"30px 16px",color:T.textDim,fontSize:13}}>No items · tap here to add</div>}
           {items.map(it=>{
             const tot=itemTotal(it);
+            const addonStr=(it.addons||[]).filter(a=>a.qty>0).map(a=>a.name).join(", ");
             return(
               <div key={it.uid} className="oi" onClick={e=>e.stopPropagation()}>
-                <span className="oi-name">{it.name}</span>
-                <button className={`oi-note-btn ${it.note?"has":""}`} onClick={()=>onNoteItem({uid:it.uid,name:it.name,note:it.note||"",cat:it.cat,catName:"",tid})}>📝</button>
-                <button className="qb" onClick={()=>changeQty(it.uid,-1)}>−</button>
-                <span className="qn">{it.qty}</span>
-                <button className="qb" onClick={()=>changeQty(it.uid,1)}>+</button>
-                <span className="oi-price-r">₹{tot}</span>
-                {staffAuth?.perms?.cancel&&<button className="qb del" onClick={()=>{
-                  if(isOwner||!cancelPin){onRemove(tid,it.uid);}
-                  else{setPinModal(it.uid);}
-                }}>✕</button>}
+                <div className="oi-ctrl-row">
+                  <span className="oi-name">{it.name}</span>
+                  <button className={`oi-note-btn ${it.note?"has":""}`} onClick={()=>onNoteItem({uid:it.uid,name:it.name,note:it.note||"",cat:it.cat,catName:"",tid})}>📝</button>
+                  <button className="qb" onClick={()=>changeQty(it.uid,-1)}>−</button>
+                  <span className="qn">{it.qty}</span>
+                  <button className="qb" onClick={()=>changeQty(it.uid,1)}>+</button>
+                  <span className="oi-price-r">₹{tot}</span>
+                  {staffAuth?.perms?.cancel&&<button className="qb del" onClick={()=>{
+                    if(isOwner||!cancelPin){onRemove(tid,it.uid);}
+                    else{setPinModal(it.uid);}
+                  }}>✕</button>}
+                </div>
+                {it.varName&&<div className="oi-sub oi-sub-var">({it.varName})</div>}
+                {addonStr&&<div className="oi-sub oi-sub-add">+ {addonStr}</div>}
+                {it.note&&<div className="oi-sub oi-sub-note">📝 {it.note}</div>}
               </div>
             );
           })}
@@ -1603,6 +1619,13 @@ function OrderScreen({tid,orders,allTables,onBack,onRemove,onUpdate,onAddExtra,o
           </div>
         </div>
       </div>}
+      {showShareSheet&&<div className="share-sheet-overlay" onClick={()=>setShowShareSheet(false)}>
+        <div className="share-sheet" onClick={e=>e.stopPropagation()}>
+          <div className="share-sheet-title">Share Order</div>
+          <div className="share-sheet-item" onClick={()=>{setShowShareSheet(false);onShareWhatsApp(tid);}}>📲 Send to WhatsApp</div>
+          <div className="share-sheet-item" onClick={()=>{setShowShareSheet(false);onShareText(tid);}}>📄 Share as Text</div>
+        </div>
+      </div>}
     </div>
   );
 }
@@ -1643,9 +1666,8 @@ function SlideMenu({onClose,onSelectItem,menuData,onSend,onPay,due,unsent,staffA
 
   return(
     <div className="menu-half">
-      {/* Action bar: ✕ | 🔍 | [spacer] | 💳 Pay | 🍳 Send */}
+      {/* Action bar: 🔍 | [spacer] | 💳 Pay | 🍳 Send */}
       <div className="menu-act-bar">
-        <button className="mab mab-close" onClick={onClose}>✕</button>
         <button className="mab mab-search" onClick={()=>{setShowSearch(p=>!p);setQ("");}}>🔍</button>
         <div style={{flex:1}}/>
         {due>0&&staffAuth?.perms?.payment&&onPay&&<button className="mab mab-pay" onClick={onPay}>💳 ₹{due}</button>}
@@ -2720,6 +2742,13 @@ function SettingsTab({floors,setFloors,staff,setStaff,fontSize,setFontSize,print
           ))}
         </div>
         <div style={{fontSize:10,color:T.textMuted,marginBottom:8}}>Negative shifts content up. Default (0) = −12mm from label top.</div>
+        <div style={{fontSize:12,fontWeight:700,marginBottom:6}}>Gap Between Labels</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+          {[0,1,2,3,4,5,6].map(g=>(
+            <button key={g} className={`sbtn ${(printCfg.labelGapMm??3)===g?"sel":""}`} onClick={()=>setPrintCfg(p=>({...p,labelGapMm:g}))}>{g}mm</button>
+          ))}
+        </div>
+        <div style={{fontSize:10,color:T.textMuted,marginBottom:4}}>Physical gap on roll between label stickers.</div>
       </div>
 
       {/* Label content & style settings */}
