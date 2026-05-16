@@ -1031,13 +1031,33 @@ export default function App(){
       return cy+lineH;
     };
 
-    const pngs=expanded.map(it=>{
-      const cv=document.createElement('canvas');
-      cv.width=W;cv.height=H;
-      const ctx=cv.getContext('2d');
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+    // Single tall canvas: all labels stacked, dashed tear-line between each.
+    // Continuous roll mode prints top-to-bottom — no page breaks needed.
+    const SEP=8; // px gap between labels (for tear-line)
+    const totalH=expanded.length*H+(expanded.length-1)*SEP;
+    const cv=document.createElement('canvas');
+    cv.width=W;cv.height=totalH;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,W,totalH);
+
+    expanded.forEach((it,idx)=>{
+      const base=idx*(H+SEP);
       const mw=W-padX*2;
-      let y=padTop;
+
+      // Dashed tear line between labels
+      if(idx>0){
+        ctx.save();
+        ctx.setLineDash([6,5]);
+        ctx.strokeStyle='#aaa';
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(4,base-SEP/2);
+        ctx.lineTo(W-4,base-SEP/2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      let y=base+padTop;
 
       if(cfg.labelShowName!==false){
         const sz=Math.round((cfg.labelNameSize||11)*PT);
@@ -1075,16 +1095,15 @@ export default function App(){
         const sz=Math.round(6*PT);
         ctx.font=`${sz}px ${ff}`;ctx.fillStyle='#888';
         const t=`${it._piece}/${it._total}`;
-        ctx.fillText(t,W-padX-ctx.measureText(t).width,H-Math.round(2*PPM));
+        ctx.fillText(t,W-padX-ctx.measureText(t).width,base+H-Math.round(2*PPM));
       }
-      return cv.toDataURL('image/png');
     });
 
-    // Each label PNG embedded in its own page div — RawBT renders at exact label dimensions
-    const divs=pngs.map(p=>`<div class="lb"><img src="${p}"></div>`).join('');
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:${paperWmm}mm ${lh}mm;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{width:${paperWmm}mm;background:#fff}.lb{width:${paperWmm}mm;height:${lh}mm;overflow:hidden;page-break-after:always;break-after:page}.lb:last-child{page-break-after:auto;break-after:auto}img{display:block;width:100%;height:100%}</style></head><body>${divs}</body></html>`;
+    // One image, continuous roll — RawBT prints top to bottom, user tears at dashed lines
+    const png=cv.toDataURL('image/png');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0}body{background:#fff;width:${paperWmm}mm}img{display:block;width:${paperWmm}mm}</style></head><body><img src="${png}"></body></html>`;
     const b64=btoa(unescape(encodeURIComponent(html)));
-    const url=`rawbt://rawbt?format=html&paperWidth=${paperWmm}&paperHeight=${lh}&data=${encodeURIComponent(b64)}`;
+    const url=`rawbt://rawbt?format=html&paperWidth=${paperWmm}&data=${encodeURIComponent(b64)}`;
     const a=document.createElement('a');a.href=url;a.style.display='none';
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     showNotif(`🏷️ Sent ${expanded.length} label${expanded.length>1?'s':''} to RawBT`);
