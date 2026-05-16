@@ -350,25 +350,26 @@ body{zoom:${(e/14).toFixed(3)};}
         ${c>0?`<tr><td style="font-size:12px;font-weight:bold">DUE</td><td style="text-align:right;font-size:12px;font-weight:bold">₹${c}</td></tr>`:``}
       </tfoot></table>
       <div class="foot">${t.footer||`Thank You! Visit Again!`}</div>
-    </body></html>`},Mt=e=>{let t=jt(e,Qe,d);if(!t)return;let n=window.open(``,`_blank`,`width=400,height=650`);if(!n){P(`⚠️ Allow popups to print`);return}n.document.write(t),n.document.close(),n.addEventListener(`load`,()=>{setTimeout(()=>{n.print()},300)}),P(`🖨 Opening print dialog...`)},Nt=async()=>{if(!navigator.bluetooth){P(`❌ Web Bluetooth not supported in this browser`);return}try{let e=await navigator.bluetooth.requestDevice({filters:[{services:[`000018f0-0000-1000-8000-00805f9b34fb`]},{services:[`49535343-fe7d-4ae5-8fa9-9fafd205e455`]}],optionalServices:[`000018f0-0000-1000-8000-00805f9b34fb`,`49535343-fe7d-4ae5-8fa9-9fafd205e455`,`ff00`,`fff0`]}).catch(()=>navigator.bluetooth.requestDevice({acceptAllDevices:!0,optionalServices:[`000018f0-0000-1000-8000-00805f9b34fb`,`49535343-fe7d-4ae5-8fa9-9fafd205e455`]}));await e.gatt.connect(),nt(e),P(`✅ Connected: ${e.name}`)}catch{P(`❌ BLE connect failed. Pair via Android Bluetooth settings instead.`)}},Pt=e=>{let t=j[e];if(!t)return;let n=(t.items||[]).filter(e=>e.sent!==!1);if(!n.length){P(`No items to label`);return}let r=Qe,i=r.labelW||50,a=r.labelH||25,o=r.labelFont||`Arial`,s=r.labelVShift||0,c=(e,t,n)=>`font-size:${e}px;font-weight:${t?`bold`:`normal`};font-style:${n?`italic`:`normal`};`,l=n.flatMap(e=>Array.from({length:e.qty||1},(t,n)=>({...e,_piece:n+1,_total:e.qty||1}))),u=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      @page{size:${i}mm ${a}mm;margin:0;}
-      *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:"${o}",sans-serif;background:#fff;width:${i}mm;}
-      .lbl{width:${i}mm;height:${a}mm;padding:1.5mm 2mm;display:flex;flex-direction:column;justify-content:center;page-break-after:always;overflow:hidden;margin-top:${s}mm;}
-      .lbl:last-child{page-break-after:auto;}
-      .nm{line-height:1.15;color:#000;word-wrap:break-word;word-break:break-word;white-space:normal;}
-      .sub{color:#333;margin-top:0.5mm;line-height:1.2;word-wrap:break-word;word-break:break-word;}
-      .nt{color:#c05000;margin-top:0.5mm;word-wrap:break-word;word-break:break-word;}
-      .pr{color:#000;margin-top:0.5mm;}
-      .pcs{font-size:9px;font-weight:bold;margin-top:1mm;text-align:right;color:#555;}
-    </style></head><body>${l.map(e=>{let t=e.varName?`(${e.varName})`:``,n=(e.addons||[]).filter(e=>e.qty>0).map(e=>e.name).join(`, `),i=e._total>1?`${e._piece}/${e._total}`:``;return`<div class="lbl">
+    </body></html>`},Mt=e=>{let t=jt(e,Qe,d);if(!t)return;let n=window.open(``,`_blank`,`width=400,height=650`);if(!n){P(`⚠️ Allow popups to print`);return}n.document.write(t),n.document.close(),n.addEventListener(`load`,()=>{setTimeout(()=>{n.print()},300)}),P(`🖨 Opening print dialog...`)},Nt=async()=>{if(!navigator.bluetooth){P(`❌ Web Bluetooth not supported in this browser`);return}try{let e=await navigator.bluetooth.requestDevice({filters:[{services:[`000018f0-0000-1000-8000-00805f9b34fb`]},{services:[`49535343-fe7d-4ae5-8fa9-9fafd205e455`]}],optionalServices:[`000018f0-0000-1000-8000-00805f9b34fb`,`49535343-fe7d-4ae5-8fa9-9fafd205e455`,`ff00`,`fff0`]}).catch(()=>navigator.bluetooth.requestDevice({acceptAllDevices:!0,optionalServices:[`000018f0-0000-1000-8000-00805f9b34fb`,`49535343-fe7d-4ae5-8fa9-9fafd205e455`]}));await e.gatt.connect(),nt(e),P(`✅ Connected: ${e.name}`)}catch{P(`❌ BLE connect failed. Pair via Android Bluetooth settings instead.`)}},Pt=e=>{let t=j[e];if(!t)return;let n=(t.items||[]).filter(e=>(e.qty||0)>0);if(!n.length){P(`No items to label`);return}let r=Qe,i=r.labelW||50,a=r.labelH||25,o=r.labelFont||`Arial`,s=r.labelVShift??-12,c=(e,t,n)=>`font-size:${e}px;font-weight:${t?`bold`:`normal`};font-style:${n?`italic`:`normal`};`,l=n.flatMap(e=>Array.from({length:e.qty||1},(t,n)=>({...e,_piece:n+1,_total:e.qty||1}))),u=l.map(e=>{let t=e.varName?`(${e.varName})`:``,n=(e.addons||[]).filter(e=>e.qty>0).map(e=>e.name).join(`, `),i=e._total>1?`${e._piece}/${e._total}`:``;return`<div class="lbl"><div class="lbl-c">
         ${r.labelShowName===!1?``:`<div class="nm" style="${c(r.labelNameSize||11,r.labelNameBold!==!1,r.labelNameItalic)}">${e.name}</div>`}
         ${r.labelShowVar!==!1&&t?`<div class="sub" style="${c(r.labelVarSize||9,r.labelVarBold,r.labelVarItalic)}">${t}</div>`:``}
         ${r.labelShowAddons!==!1&&n?`<div class="sub" style="${c(r.labelAddonSize||9,r.labelAddonBold,r.labelAddonItalic)}">+ ${n}</div>`:``}
         ${r.labelShowNotes!==!1&&e.note?`<div class="nt" style="${c(r.labelNoteSize||9,r.labelNoteBold,r.labelNoteItalic)}">📝 ${e.note}</div>`:``}
         ${r.labelShowPrice?`<div class="pr" style="${c(r.labelPriceSize||10,r.labelPriceBold!==!1,r.labelPriceItalic)}">₹${sh(e)}</div>`:``}
         ${i?`<div class="pcs">${i}</div>`:``}
-      </div>`}).join(``)}</body></html>`,d=window.open(``,`_blank`,`width=300,height=500`);if(!d){P(`⚠️ Allow popups to print labels`);return}d.document.write(u),d.document.close(),d.addEventListener(`load`,()=>{setTimeout(()=>{d.print()},300)}),P(`🏷️ Printing ${l.length} label${l.length>1?`s`:``}...`)},Ft=e=>{let t=j[e];if(!t)return;let n=k.find(t=>t.id===e)?.name||e,r=t.items||[],i=r.map(e=>{let t=(e.addons||[]).filter(e=>e.qty>0).map(e=>e.name).join(`, `);return`  `+e.name+(e.varName?` (`+e.varName+`)`:``)+(t?` + `+t:``)+` x`+e.qty+`  Rs.`+sh(e)}).join(`
+      </div></div>`}).join(``),d=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      @page{size:${i}mm ${a}mm;margin:0;}
+      *{box-sizing:border-box;margin:0;padding:0;}
+      html,body{width:${i}mm;max-width:${i}mm;background:#fff;font-family:"${o}",sans-serif;}
+      .lbl{width:${i}mm;height:${a}mm;overflow:hidden;page-break-after:always;}
+      .lbl:last-child{page-break-after:auto;}
+      .lbl-c{width:${i}mm;height:${a}mm;padding:1.5mm 2mm;display:flex;flex-direction:column;justify-content:center;overflow:hidden;transform:translateY(${s}mm);}
+      .nm{line-height:1.2;color:#000;word-wrap:break-word;word-break:break-word;white-space:normal;max-width:${i-4}mm;}
+      .sub{color:#333;margin-top:0.5mm;line-height:1.2;word-wrap:break-word;word-break:break-word;max-width:${i-4}mm;}
+      .nt{color:#c05000;margin-top:0.5mm;word-wrap:break-word;word-break:break-word;max-width:${i-4}mm;}
+      .pr{color:#000;margin-top:0.5mm;}
+      .pcs{font-size:9px;font-weight:bold;margin-top:1mm;text-align:right;color:#555;}
+    </style></head><body>${u}</body></html>`,f=window.open(``,`_blank`,`width=300,height=500`);if(!f){P(`⚠️ Allow popups to print labels`);return}f.document.write(d),f.document.close(),f.addEventListener(`load`,()=>{setTimeout(()=>{f.print()},300)}),P(`🏷️ Printing ${l.length} label${l.length>1?`s`:``}...`)},Ft=e=>{let t=j[e];if(!t)return;let n=k.find(t=>t.id===e)?.name||e,r=t.items||[],i=r.map(e=>{let t=(e.addons||[]).filter(e=>e.qty>0).map(e=>e.name).join(`, `);return`  `+e.name+(e.varName?` (`+e.varName+`)`:``)+(t?` + `+t:``)+` x`+e.qty+`  Rs.`+sh(e)}).join(`
 `),a=r.reduce((e,t)=>e+sh(t),0),o=t.paidAmount||0,s=`*MOD POS - Bill*
 *Table: `+n+`*
 *Date: `+new Date().toLocaleDateString(`en-IN`)+`*
