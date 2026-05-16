@@ -1110,11 +1110,10 @@ export default function App(){
       }
     });
 
-    // One image, continuous roll — RawBT prints top to bottom, user tears at dashed lines
-    const png=cv.toDataURL('image/png');
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0}body{background:#fff;width:${paperWmm}mm}img{display:block;width:${paperWmm}mm}</style></head><body><img src="${png}"></body></html>`;
-    const b64=btoa(unescape(encodeURIComponent(html)));
-    const url=`rawbt://rawbt?format=html&paperWidth=${paperWmm}&data=${encodeURIComponent(b64)}`;
+    // Send PNG directly — format=png bypasses HTML pagination (no 1/3, 2/3 pages)
+    const pngDataUrl=cv.toDataURL('image/png');
+    const pngB64=pngDataUrl.replace('data:image/png;base64,','');
+    const url=`rawbt://rawbt?format=png&paperWidth=${paperWmm}&data=${encodeURIComponent(pngB64)}`;
     const a=document.createElement('a');a.href=url;a.style.display='none';
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     showNotif(`🏷️ Sent ${expanded.length} label${expanded.length>1?'s':''} to RawBT`);
