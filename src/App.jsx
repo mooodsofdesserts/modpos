@@ -615,7 +615,7 @@ export default function App(){
   const[itemDone,setItemDone]=useState({});
   const[reportPeriod,setReportPeriod]=useState("today");
   const[kitchenCfg,setKitchenCfg]=useState({waiterName:false,itemNotes:true,sortBy:"default"});
-  const[printCfg,setPrintCfg]=useState(()=>{const def={companyName:true,header:"Opp. Redij Petrol Pump, Near D.B.J College, Chiplun, 415605",footer:"Thank You! Visit Again!!",time:true,qty:true,price:true,desc:true,tax:false,table:true,paperWidth:58,labelW:50,labelH:25,labelVShift:0,staffName:false,itemNotesPrint:false,labelFont:"Arial",labelShowName:true,labelShowVar:true,labelShowAddons:true,labelShowNotes:true,labelShowPrice:false,labelNameSize:11,labelNameBold:true,labelNameItalic:false,labelVarSize:9,labelVarBold:false,labelVarItalic:false,labelAddonSize:9,labelAddonBold:false,labelAddonItalic:false,labelNoteSize:9,labelNoteBold:false,labelNoteItalic:false,labelPriceSize:10,labelPriceBold:true,labelPriceItalic:false};try{const s=localStorage.getItem("modpos_printcfg");if(s)return {...def,...JSON.parse(s)};}catch{}return def;});
+  const[printCfg,setPrintCfg]=useState(()=>{const def={companyName:true,header:"Opp. Redij Petrol Pump, Near D.B.J College, Chiplun, 415605",footer:"Thank You! Visit Again!!",time:true,qty:true,price:true,desc:true,tax:false,table:true,paperWidth:58,labelW:50,labelH:25,labelVShift:0,staffName:false,itemNotesPrint:false,labelFont:"Arial",labelShowName:true,labelShowVar:true,labelShowAddons:true,labelShowNotes:true,labelShowPrice:false,labelNameSize:11,labelNameBold:true,labelNameItalic:false,labelVarSize:9,labelVarBold:false,labelVarItalic:false,labelAddonSize:9,labelAddonBold:false,labelAddonItalic:false,labelNoteSize:9,labelNoteBold:false,labelNoteItalic:false,labelPriceSize:10,labelPriceBold:true,labelPriceItalic:false,labelDots:384};try{const s=localStorage.getItem("modpos_printcfg");if(s)return {...def,...JSON.parse(s)};}catch{}return def;});
   const savePrintCfg=(cfg)=>{setPrintCfg(cfg);try{localStorage.setItem("modpos_printcfg",JSON.stringify(cfg));}catch{}};
   const[btPrinter,setBtPrinter]=useState(null); // Web Bluetooth device
   const{notes:recentNotes,addNote}=useRecentNotes();
@@ -1001,7 +1001,9 @@ export default function App(){
     const cfg=printCfg;
     const lw=cfg.labelW||50,lh=cfg.labelH||25;
     const PPM=203/25.4; // px per mm at 203 DPI (thermal printer native)
-    const W=Math.round(lw*PPM),H=Math.round(lh*PPM);
+    const W=cfg.labelDots||384; // print head width in dots; 384 = 48mm at 203 DPI (standard 50mm roll)
+    const H=Math.round(lh*PPM);
+    const paperWmm=Math.round(W/PPM); // actual printable width in mm for rawbt URL
     const PT=203/72; // px per point at 203 DPI
     const ff=`'${cfg.labelFont||"Arial"}',Arial,sans-serif`;
     const padX=Math.round(2*PPM);
@@ -1080,9 +1082,9 @@ export default function App(){
 
     // Each label PNG embedded in its own page div — RawBT renders at exact label dimensions
     const divs=pngs.map(p=>`<div class="lb"><img src="${p}"></div>`).join('');
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:${lw}mm ${lh}mm;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{width:${lw}mm;background:#fff}.lb{width:${lw}mm;height:${lh}mm;overflow:hidden;page-break-after:always;break-after:page}.lb:last-child{page-break-after:auto;break-after:auto}img{display:block;width:100%;height:100%}</style></head><body>${divs}</body></html>`;
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:${paperWmm}mm ${lh}mm;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{width:${paperWmm}mm;background:#fff}.lb{width:${paperWmm}mm;height:${lh}mm;overflow:hidden;page-break-after:always;break-after:page}.lb:last-child{page-break-after:auto;break-after:auto}img{display:block;width:100%;height:100%}</style></head><body>${divs}</body></html>`;
     const b64=btoa(unescape(encodeURIComponent(html)));
-    const url=`rawbt://rawbt?format=html&paperWidth=${lw}&paperHeight=${lh}&data=${encodeURIComponent(b64)}`;
+    const url=`rawbt://rawbt?format=html&paperWidth=${paperWmm}&paperHeight=${lh}&data=${encodeURIComponent(b64)}`;
     const a=document.createElement('a');a.href=url;a.style.display='none';
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     showNotif(`🏷️ Sent ${expanded.length} label${expanded.length>1?'s':''} to RawBT`);
