@@ -1033,7 +1033,7 @@ export default function App(){
 
     // Single tall canvas: all labels stacked, dashed tear-line between each.
     // Continuous roll mode prints top-to-bottom — no page breaks needed.
-    const SEP=8; // px gap between labels (for tear-line)
+    const SEP=40; // px gap between labels (~5mm at 203 DPI)
     const totalH=expanded.length*H+(expanded.length-1)*SEP;
     const cv=document.createElement('canvas');
     cv.width=W;cv.height=totalH;
@@ -1044,17 +1044,17 @@ export default function App(){
       const base=idx*(H+SEP);
       const mw=W-padX*2;
 
-      // Dashed tear line between labels
+      // Solid black tear line between labels — 2px thick, full width, centred in the gap
       if(idx>0){
-        ctx.save();
-        ctx.setLineDash([6,5]);
-        ctx.strokeStyle='#aaa';
-        ctx.lineWidth=1;
-        ctx.beginPath();
-        ctx.moveTo(4,base-SEP/2);
-        ctx.lineTo(W-4,base-SEP/2);
-        ctx.stroke();
-        ctx.restore();
+        const ly=base-Math.round(SEP/2);
+        ctx.fillStyle='#000';
+        ctx.fillRect(0,ly-1,W,3); // 3px tall solid black bar
+        // Scissor text marker
+        const scSz=Math.round(7*PT);
+        ctx.font=`${scSz}px ${ff}`;
+        ctx.fillStyle='#555';
+        const scTxt='- - - - - - - - - - - - - - - -';
+        ctx.fillText(scTxt,padX,ly-Math.round(SEP/4));
       }
 
       let y=base+padTop;
