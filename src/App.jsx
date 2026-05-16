@@ -999,52 +999,93 @@ export default function App(){
     const items=(ord.items||[]).filter(it=>(it.qty||0)>0);
     if(!items.length){showNotif("No items to label");return;}
     const cfg=printCfg;
-    const lw=cfg.labelW||50;
-    const lh=cfg.labelH||25;
-    const font=cfg.labelFont||"Arial";
-    // vshift: positive pushes content down, negative toward top. Clamp padding to avoid negative.
-    const ptop=Math.max(0.5,1.5+(cfg.labelVShift??0));
-    // 1px ≈ 0.75pt in print; use pt for reliable cross-device sizing
-    const pt=(px)=>Math.round(px*0.75);
-    const fs=(sz,bold,italic)=>"font-size:"+pt(sz||9)+"pt;font-weight:"+(bold?"bold":"normal")+";font-style:"+(italic?"italic":"normal")+";";
+    const lw=cfg.labelW||50,lh=cfg.labelH||25;
+    const PPM=203/25.4; // px per mm at 203 DPI (thermal printer native)
+    const W=Math.round(lw*PPM),H=Math.round(lh*PPM);
+    const PT=203/72; // px per point at 203 DPI
+    const ff=`'${cfg.labelFont||"Arial"}',Arial,sans-serif`;
+    const padX=Math.round(2*PPM);
+    const padTop=Math.round(Math.max(0.5,1.5+(cfg.labelVShift||0))*PPM);
     const expanded=items.flatMap(it=>Array.from({length:it.qty||1},(_,i)=>({...it,_piece:i+1,_total:it.qty||1})));
-    const rows=expanded.map(it=>{
-      const varTxt=it.varName?"("+it.varName+")":"";
-      const addTxt=(it.addons||[]).filter(a=>a.qty>0).map(a=>a.name).join(", ");
-      const multiQty=it._total>1?(it._piece+"/"+it._total):"";
-      const nm=cfg.labelShowName!==false?"<div class='nm' style='"+fs(cfg.labelNameSize||11,cfg.labelNameBold!==false,cfg.labelNameItalic)+"'>"+it.name+"</div>":"";
-      const vr=cfg.labelShowVar!==false&&varTxt?"<div class='sub' style='"+fs(cfg.labelVarSize||9,cfg.labelVarBold,cfg.labelVarItalic)+"'>"+varTxt+"</div>":"";
-      const ad=cfg.labelShowAddons!==false&&addTxt?"<div class='sub' style='"+fs(cfg.labelAddonSize||9,cfg.labelAddonBold,cfg.labelAddonItalic)+"'>+ "+addTxt+"</div>":"";
-      const nt=cfg.labelShowNotes!==false&&it.note?"<div class='nt' style='"+fs(cfg.labelNoteSize||9,cfg.labelNoteBold,cfg.labelNoteItalic)+"'>📝 "+it.note+"</div>":"";
-      const pr=cfg.labelShowPrice?"<div class='pr' style='"+fs(cfg.labelPriceSize||10,cfg.labelPriceBold!==false,cfg.labelPriceItalic)+"'>₹"+itemTotal(it)+"</div>":"";
-      const pcs=multiQty?"<div class='pcs'>"+multiQty+"</div>":"";
-      return "<div class='lbl'>"+nm+vr+ad+nt+pr+pcs+"</div>";
-    }).join("");
-    const css=
-      "@page{size:"+lw+"mm "+lh+"mm;margin:0;}"
-      +"*{box-sizing:border-box;margin:0;padding:0;}"
-      +"html,body{width:"+lw+"mm;margin:0;padding:0;background:#fff;font-family:'"+font+"',Arial,sans-serif;}"
-      +".lbl{width:"+lw+"mm;height:"+lh+"mm;padding:"+ptop+"mm 2mm 1mm 2mm;overflow:hidden;"
-        +"page-break-after:always;break-after:page;"
-        +"page-break-inside:avoid;break-inside:avoid;"
-        +"display:flex;flex-direction:column;justify-content:flex-start;}"
-      +".lbl:last-child{page-break-after:auto;break-after:auto;}"
-      +".nm{line-height:1.15;color:#000;word-wrap:break-word;word-break:break-word;white-space:normal;}"
-      +".sub{color:#444;margin-top:0.4mm;line-height:1.1;word-wrap:break-word;}"
-      +".nt{color:#c05000;margin-top:0.4mm;word-wrap:break-word;}"
-      +".pr{color:#000;font-weight:bold;margin-top:0.4mm;}"
-      +".pcs{font-size:6pt;margin-top:0.5mm;text-align:right;color:#666;}";
-    const html="<!DOCTYPE html><html><head><meta charset='UTF-8'><style>"+css+"</style></head><body>"+rows+"</body></html>";
-    // RawBT URL scheme: passes paperWidth+paperHeight directly so RawBT uses label dims, not its roll config
+
+    const mkFont=(sz,bold,italic)=>{
+      const p=[];
+      if(italic)p.push('italic');
+      if(bold)p.push('bold');
+      p.push(Math.round(sz*PT)+'px');
+      p.push(ff);
+      return p.join(' ');
+    };
+
+    // Word-wrap text in canvas; returns Y after last line
+    const wrapText=(ctx,text,x,y,maxW,lineH)=>{
+      const words=text.split(' ');let line='',cy=y;
+      for(const w of words){
+        const t=line?line+' '+w:w;
+        if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,cy);line=w;cy+=lineH;}
+        else line=t;
+      }
+      if(line)ctx.fillText(line,x,cy);
+      return cy+lineH;
+    };
+
+    const pngs=expanded.map(it=>{
+      const cv=document.createElement('canvas');
+      cv.width=W;cv.height=H;
+      const ctx=cv.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+      const mw=W-padX*2;
+      let y=padTop;
+
+      if(cfg.labelShowName!==false){
+        const sz=Math.round((cfg.labelNameSize||11)*PT);
+        const lhv=Math.round(sz*1.2);
+        ctx.font=mkFont(cfg.labelNameSize||11,cfg.labelNameBold!==false,cfg.labelNameItalic);
+        ctx.fillStyle='#000';
+        y=wrapText(ctx,it.name,padX,y+sz,mw,lhv);
+      }
+      if(cfg.labelShowVar!==false&&it.varName){
+        const sz=Math.round((cfg.labelVarSize||9)*PT);
+        ctx.font=mkFont(cfg.labelVarSize||9,cfg.labelVarBold,cfg.labelVarItalic);
+        ctx.fillStyle='#555';y+=Math.round(0.4*PPM);
+        y=wrapText(ctx,`(${it.varName})`,padX,y+sz,mw,Math.round(sz*1.15));
+      }
+      const addTxt=(it.addons||[]).filter(a=>a.qty>0).map(a=>a.name).join(', ');
+      if(cfg.labelShowAddons!==false&&addTxt){
+        const sz=Math.round((cfg.labelAddonSize||9)*PT);
+        ctx.font=mkFont(cfg.labelAddonSize||9,cfg.labelAddonBold,cfg.labelAddonItalic);
+        ctx.fillStyle='#555';y+=Math.round(0.4*PPM);
+        y=wrapText(ctx,`+ ${addTxt}`,padX,y+sz,mw,Math.round(sz*1.15));
+      }
+      if(cfg.labelShowNotes!==false&&it.note){
+        const sz=Math.round((cfg.labelNoteSize||9)*PT);
+        ctx.font=mkFont(cfg.labelNoteSize||9,cfg.labelNoteBold,cfg.labelNoteItalic);
+        ctx.fillStyle='#c05000';y+=Math.round(0.4*PPM);
+        y=wrapText(ctx,`Note: ${it.note}`,padX,y+sz,mw,Math.round(sz*1.15));
+      }
+      if(cfg.labelShowPrice){
+        const sz=Math.round((cfg.labelPriceSize||10)*PT);
+        ctx.font=mkFont(cfg.labelPriceSize||10,cfg.labelPriceBold!==false,cfg.labelPriceItalic);
+        ctx.fillStyle='#000';y+=Math.round(0.4*PPM);
+        ctx.fillText(`Rs.${itemTotal(it)}`,padX,y+sz);
+      }
+      if(it._total>1){
+        const sz=Math.round(6*PT);
+        ctx.font=`${sz}px ${ff}`;ctx.fillStyle='#888';
+        const t=`${it._piece}/${it._total}`;
+        ctx.fillText(t,W-padX-ctx.measureText(t).width,H-Math.round(2*PPM));
+      }
+      return cv.toDataURL('image/png');
+    });
+
+    // Each label PNG embedded in its own page div — RawBT renders at exact label dimensions
+    const divs=pngs.map(p=>`<div class="lb"><img src="${p}"></div>`).join('');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:${lw}mm ${lh}mm;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{width:${lw}mm;background:#fff}.lb{width:${lw}mm;height:${lh}mm;overflow:hidden;page-break-after:always;break-after:page}.lb:last-child{page-break-after:auto;break-after:auto}img{display:block;width:100%;height:100%}</style></head><body>${divs}</body></html>`;
     const b64=btoa(unescape(encodeURIComponent(html)));
-    const rawbtUrl="rawbt://rawbt?format=html&paperWidth="+lw+"&paperHeight="+lh+"&data="+encodeURIComponent(b64);
-    const a=document.createElement("a");
-    a.href=rawbtUrl;
-    a.style.display="none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showNotif("🏷️ Sent "+expanded.length+" label"+(expanded.length>1?"s":"")+" to RawBT");
+    const url=`rawbt://rawbt?format=html&paperWidth=${lw}&paperHeight=${lh}&data=${encodeURIComponent(b64)}`;
+    const a=document.createElement('a');a.href=url;a.style.display='none';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    showNotif(`🏷️ Sent ${expanded.length} label${expanded.length>1?'s':''} to RawBT`);
   };
 
   const shareOnWhatsApp=(tid)=>{
